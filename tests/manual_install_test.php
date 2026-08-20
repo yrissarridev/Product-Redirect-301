@@ -29,6 +29,11 @@ check($module->install(), 'install() returns true');
 $idTabAfterInstall = (int) Tab::getIdFromClassName('AdminWineRedirects');
 check($idTabAfterInstall > 0, 'a Tab with class_name AdminWineRedirects exists after install()');
 
+$idCatalogTab = (int) Tab::getIdFromClassName('AdminCatalog');
+$tab = new Tab($idTabAfterInstall);
+check($idCatalogTab > 0, 'this store has a Tab with class_name AdminCatalog to nest under');
+check((int) $tab->id_parent === $idCatalogTab, 'the new Tab is nested under the Catálogo menu, not left at the top level');
+
 check($module->uninstall(), 'uninstall() returns true');
 $idTabAfterUninstall = (int) Tab::getIdFromClassName('AdminWineRedirects');
 check($idTabAfterUninstall === 0, 'the Tab is gone after uninstall()');

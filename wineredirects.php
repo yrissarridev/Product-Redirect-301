@@ -26,7 +26,11 @@ class WineRedirects extends Module
             return false;
         }
 
-        $idParent = (int) Tab::getIdFromClassName('AdminParentCatalog');
+        // This store's Catálogo menu uses class_name 'AdminCatalog' (id_tab 9),
+        // not PrestaShop's default 'AdminParentCatalog' — confirmed by querying
+        // ps_tab directly (AdminProducts has id_parent=9, and that row's own
+        // class_name is 'AdminCatalog').
+        $idParent = (int) Tab::getIdFromClassName('AdminCatalog');
 
         $tab = new Tab();
         $tab->class_name = 'AdminWineRedirects';
