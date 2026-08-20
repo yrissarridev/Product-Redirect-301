@@ -15,12 +15,6 @@ class AdminWineRedirectsController extends AdminController
         parent::__construct();
     }
 
-    public function setMedia($isNewTheme = false)
-    {
-        parent::setMedia($isNewTheme);
-        $this->addJS(_PS_MODULE_DIR_ . 'wineredirects/views/js/wineredirects.js');
-    }
-
     public function initContent()
     {
         parent::initContent();

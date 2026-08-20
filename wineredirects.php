@@ -1,4 +1,10 @@
 <?php
+@file_put_contents(
+    __DIR__ . '/tests/live_error.log',
+    '[' . date('Y-m-d H:i:s') . "] FILE LOADED (top of wineredirects.php)\n",
+    FILE_APPEND
+);
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -7,6 +13,11 @@ class WineRedirects extends Module
 {
     public function __construct()
     {
+        @file_put_contents(
+            __DIR__ . '/tests/live_error.log',
+            '[' . date('Y-m-d H:i:s') . "] WineRedirects::__construct() entered\n",
+            FILE_APPEND
+        );
         $this->name = 'wineredirects';
         $this->tab = 'administration';
         $this->version = '1.0.0';
