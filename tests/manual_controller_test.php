@@ -59,3 +59,18 @@ foreach ($pairs as $pair) {
 
 echo "Confirmed suggestions (not yet in .htaccess): $confirmed\n";
 echo "Needs-review suggestions (not yet in .htaccess): $review\n";
+
+$productsById = [];
+foreach ($products as $product) {
+    $productsById[$product['id']] = $product;
+}
+$redirectEntries = WineRedirectsHtaccessParser::extractRedirectEntries($htaccessContent);
+$obsolete = 0;
+foreach ($redirectEntries as $entry) {
+    $product = $productsById[$entry['id']] ?? null;
+    if ($product !== null && $product['active'] && $product['quantity'] > 0) {
+        $obsolete++;
+        echo "  OBSOLETE: #{$product['id']} {$product['name']} (stock {$product['quantity']}) -> {$entry['line']}\n";
+    }
+}
+echo "Obsolete redirects (source product active + in stock again): $obsolete\n";

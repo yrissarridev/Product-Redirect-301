@@ -28,6 +28,13 @@
   #wr-root .wr-check { width: 34px; }
   #wr-root .wr-arrow { width: 30px; text-align: center; color: #ccc; }
   #wr-root .wr-col { width: 44%; }
+  #wr-root .wr-name-col { width: 40%; }
+  #wr-root .wr-line-col {
+    width: 60%;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 11px;
+    color: #999;
+  }
   #wr-root .wr-name {
     font-weight: bold;
     display: block;
@@ -189,6 +196,46 @@
       <textarea id="wineredirects-output" class="form-control wr-output" rows="10" readonly></textarea>
     </div>
 
+    <div class="wr-section-title">Obsoletos ({$obsolete|count})</div>
+    <div class="wr-hint">El producto de origen ha vuelto a estar activo y con stock &mdash; el redirect ya no debería existir, está devolviendo a los clientes a otro vino en vez de dejarles comprar este.</div>
+    <div class="wr-table-wrap">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th class="wr-check"></th>
+            <th class="wr-name-col">Producto (ya disponible de nuevo)</th>
+            <th class="wr-line-col">Línea a eliminar del .htaccess</th>
+          </tr>
+        </thead>
+        <tbody>
+          {foreach from=$obsolete item=row}
+          <tr>
+            <td class="wr-check">
+              <input type="checkbox" class="wineredirects-obsolete-checkbox" checked="checked"
+                     data-line="{$row.line|escape:'html':'UTF-8'}">
+            </td>
+            <td class="wr-name-col">
+              <span class="wr-name">{$row.name|escape:'html':'UTF-8'}</span>
+              <span class="wr-meta">
+                #{$row.id} &middot;
+                <span class="label label-success">stock {$row.qty}</span>
+              </span>
+            </td>
+            <td class="wr-line-col">{$row.line|escape:'html':'UTF-8'}</td>
+          </tr>
+          {foreachelse}
+          <tr><td class="wr-empty" colspan="3">No hay redirects obsoletos ahora mismo.</td></tr>
+          {/foreach}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="wr-actions">
+      <button type="button" id="wineredirects-generate-obsolete" class="btn btn-primary">Generar lista para eliminar</button>
+      <button type="button" id="wineredirects-copy-obsolete" class="btn btn-default">Copiar</button>
+      <textarea id="wineredirects-output-obsolete" class="form-control wr-output" rows="6" readonly placeholder="Estas líneas hay que buscarlas y borrarlas del .htaccess, no añadirlas."></textarea>
+    </div>
+
   </div>
 </div>
 
@@ -212,6 +259,21 @@ function wineRedirectsCopyDocument() {
   navigator.clipboard.writeText(textarea.value);
 }
 
+function wineRedirectsRefreshObsoleteDocument() {
+  var checked = document.querySelectorAll('.wineredirects-obsolete-checkbox:checked');
+  var lines = Array.prototype.map.call(checked, function (checkbox) {
+    return checkbox.getAttribute('data-line');
+  });
+  var textarea = document.getElementById('wineredirects-output-obsolete');
+  textarea.value = wineRedirectsBuildDocumentText(lines);
+}
+
+function wineRedirectsCopyObsoleteDocument() {
+  var textarea = document.getElementById('wineredirects-output-obsolete');
+  textarea.select();
+  navigator.clipboard.writeText(textarea.value);
+}
+
 document.addEventListener('DOMContentLoaded', function () {
   var checkboxes = document.querySelectorAll('.wineredirects-row-checkbox');
   Array.prototype.forEach.call(checkboxes, function (checkbox) {
@@ -226,6 +288,21 @@ document.addEventListener('DOMContentLoaded', function () {
   var copyButton = document.getElementById('wineredirects-copy');
   if (copyButton) {
     copyButton.addEventListener('click', wineRedirectsCopyDocument);
+  }
+
+  var obsoleteCheckboxes = document.querySelectorAll('.wineredirects-obsolete-checkbox');
+  Array.prototype.forEach.call(obsoleteCheckboxes, function (checkbox) {
+    checkbox.addEventListener('change', wineRedirectsRefreshObsoleteDocument);
+  });
+
+  var generateObsoleteButton = document.getElementById('wineredirects-generate-obsolete');
+  if (generateObsoleteButton) {
+    generateObsoleteButton.addEventListener('click', wineRedirectsRefreshObsoleteDocument);
+  }
+
+  var copyObsoleteButton = document.getElementById('wineredirects-copy-obsolete');
+  if (copyObsoleteButton) {
+    copyObsoleteButton.addEventListener('click', wineRedirectsCopyObsoleteDocument);
   }
 });
 </script>

@@ -33,10 +33,16 @@ class AdminWineRedirectsController extends AdminController
         parent::initContent();
 
         $products = $this->fetchProducts();
+        $productsById = [];
+        foreach ($products as $product) {
+            $productsById[$product['id']] = $product;
+        }
+
+        $htaccessContent = (string) @file_get_contents(_PS_ROOT_DIR_ . '/.htaccess');
+        $redirectEntries = WineRedirectsHtaccessParser::extractRedirectEntries($htaccessContent);
+        $redirectedIds = array_column($redirectEntries, 'id');
+
         $pairs = WineRedirectsVintageMatcher::findPairs($products);
-        $redirectedIds = WineRedirectsHtaccessParser::extractRedirectedProductIds(
-            (string) @file_get_contents(_PS_ROOT_DIR_ . '/.htaccess')
-        );
 
         $confirmed = [];
         $review = [];
@@ -52,9 +58,27 @@ class AdminWineRedirectsController extends AdminController
             }
         }
 
+        // A redirect goes stale the moment its source product comes back —
+        // active again, with stock — since the .htaccess rule is static and
+        // has no way to know that on its own; it would keep bouncing real
+        // customers away from a product that's sellable again.
+        $obsolete = [];
+        foreach ($redirectEntries as $entry) {
+            $product = $productsById[$entry['id']] ?? null;
+            if ($product !== null && $product['active'] && $product['quantity'] > 0) {
+                $obsolete[] = [
+                    'id' => $product['id'],
+                    'name' => $product['name'],
+                    'qty' => $product['quantity'],
+                    'line' => $entry['line'],
+                ];
+            }
+        }
+
         $this->context->smarty->assign([
             'confirmed' => $confirmed,
             'review' => $review,
+            'obsolete' => $obsolete,
         ]);
         $this->setTemplate('list.tpl');
     }
