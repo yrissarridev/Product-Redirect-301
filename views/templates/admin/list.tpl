@@ -52,7 +52,28 @@
   }
   #wr-root .wr-url:hover { color: #337ab7; text-decoration: underline; }
   #wr-root .wr-empty { color: #999; text-align: center; padding: 16px !important; }
-  #wr-root .wr-section-title { clear: both; margin-top: 24px; }
+  #wr-root .wr-section-title {
+    clear: both;
+    margin-top: 24px;
+    margin-bottom: 4px;
+    font-size: 17px;
+    font-weight: bold;
+    line-height: 1.3;
+  }
+  #wr-root .wr-hint {
+    color: #999;
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+  #wr-root .wr-alert {
+    background: #d9edf7;
+    border: 1px solid #bce8f1;
+    color: #31708f;
+    border-radius: 4px;
+    padding: 10px 15px;
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
   #wr-root .wr-output {
     width: 100%;
     font-family: Consolas, Monaco, monospace;
@@ -70,12 +91,12 @@
 
   <div style="padding: 0 20px 20px;">
 
-    <div class="alert alert-info">
+    <div class="wr-alert">
       Vinos desactivados o sin stock con una añada más reciente activa. Marca las sugerencias que quieras aplicar y genera el texto para pegar en el <code>.htaccess</code>.
     </div>
 
-    <h3 class="wr-section-title">Confirmados ({$confirmed|count})</h3>
-    <p class="text-muted">Año de la añada antigua &lt; año de la añada nueva.</p>
+    <div class="wr-section-title">Confirmados ({$confirmed|count})</div>
+    <div class="wr-hint">Año de la añada antigua &lt; año de la añada nueva.</div>
     <div class="wr-table-wrap">
       <table class="table table-hover">
         <thead>
@@ -118,8 +139,8 @@
       </table>
     </div>
 
-    <h3 class="wr-section-title">A revisar ({$review|count})</h3>
-    <p class="text-muted">El producto antiguo no tiene año detectado en el nombre &mdash; revisar antes de aceptar.</p>
+    <div class="wr-section-title">A revisar ({$review|count})</div>
+    <div class="wr-hint">El producto antiguo no tiene año detectado en el nombre &mdash; revisar antes de aceptar.</div>
     <div class="wr-table-wrap">
       <table class="table table-hover">
         <thead>
