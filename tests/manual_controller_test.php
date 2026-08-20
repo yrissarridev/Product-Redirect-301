@@ -1,9 +1,8 @@
 <?php
 // Functional check: builds the same product list + pairing the controller will use,
-// and prints counts so we can sanity-check them against the 2026-08-20/21 manual
-// analysis (which found 706 total Redirect 301 lines already applied — after that
-// work, this list should be small/empty for real vintage swaps that predate it).
-require_once '/var/www/vhosts/vinofilos.es/tienda.vinofilos.es/config/config.inc.php';
+// and prints counts so you can sanity-check them (should be a small number once
+// your existing vintage swaps are already covered in .htaccess).
+require_once __DIR__ . '/../../../config/config.inc.php';
 require_once _PS_MODULE_DIR_ . 'wineredirects/classes/VintageMatcher.php';
 require_once _PS_MODULE_DIR_ . 'wineredirects/classes/HtaccessParser.php';
 require_once _PS_MODULE_DIR_ . 'wineredirects/classes/ProductUrlBuilder.php';

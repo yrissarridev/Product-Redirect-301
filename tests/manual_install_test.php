@@ -8,8 +8,8 @@
 // — but the trailing uninstall() call still runs and *does* remove the
 // real installation. Don't run this against a live-installed module
 // expecting it to be a no-op: if wineredirects is currently installed,
-// reinstall it afterwards (see the one-liner in the plan's Task 7 Step 2).
-require_once '/var/www/vhosts/vinofilos.es/tienda.vinofilos.es/config/config.inc.php';
+// reinstall it afterwards (see "Manual install" in the README).
+require_once __DIR__ . '/../../../config/config.inc.php';
 require_once _PS_MODULE_DIR_ . 'wineredirects/wineredirects.php';
 
 $failures = 0;
@@ -37,9 +37,12 @@ check($module->install(), 'install() returns true');
 $idTabAfterInstall = (int) Tab::getIdFromClassName('AdminWineRedirects');
 check($idTabAfterInstall > 0, 'a Tab with class_name AdminWineRedirects exists after install()');
 
-$idCatalogTab = (int) Tab::getIdFromClassName('AdminCatalog');
+$idCatalogTab = (int) Tab::getIdFromClassName('AdminParentCatalog');
+if (!$idCatalogTab) {
+    $idCatalogTab = (int) Tab::getIdFromClassName('AdminCatalog');
+}
 $tab = new Tab($idTabAfterInstall);
-check($idCatalogTab > 0, 'this store has a Tab with class_name AdminCatalog to nest under');
+check($idCatalogTab > 0, 'this store has a Catálogo parent Tab (AdminParentCatalog or AdminCatalog) to nest under');
 check((int) $tab->id_parent === $idCatalogTab, 'the new Tab is nested under the Catálogo menu, not left at the top level');
 
 check($module->uninstall(), 'uninstall() returns true');

@@ -10,9 +10,10 @@ class WineRedirects extends Module
         $this->name = 'wineredirects';
         $this->tab = 'administration';
         $this->version = '1.0.0';
-        $this->author = 'Vinofilos';
+        $this->author = 'Yrissarri';
         $this->need_instance = 0;
         $this->bootstrap = true;
+        $this->ps_versions_compliancy = ['min' => '1.6', 'max' => _PS_VERSION_];
 
         parent::__construct();
 
@@ -26,11 +27,15 @@ class WineRedirects extends Module
             return false;
         }
 
-        // This store's Catálogo menu uses class_name 'AdminCatalog' (id_tab 9),
-        // not PrestaShop's default 'AdminParentCatalog' — confirmed by querying
-        // ps_tab directly (AdminProducts has id_parent=9, and that row's own
-        // class_name is 'AdminCatalog').
-        $idParent = (int) Tab::getIdFromClassName('AdminCatalog');
+        // PrestaShop's default class_name for the "Catalog" parent menu is
+        // 'AdminParentCatalog', but some stores (this one included) have it
+        // registered as plain 'AdminCatalog' instead — try both, and fall
+        // back to a top-level tab (id_parent = 0) rather than failing the
+        // whole install if neither is found.
+        $idParent = (int) Tab::getIdFromClassName('AdminParentCatalog');
+        if (!$idParent) {
+            $idParent = (int) Tab::getIdFromClassName('AdminCatalog');
+        }
 
         $tab = new Tab();
         $tab->class_name = 'AdminWineRedirects';
