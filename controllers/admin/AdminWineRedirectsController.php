@@ -15,6 +15,19 @@ class AdminWineRedirectsController extends AdminController
         parent::__construct();
     }
 
+    // AdminController::createTemplate() always resolves $tpl_name relative to
+    // the admin theme's own template directory (getTemplateDir(0)), so a
+    // module's own .tpl file has to be resolved explicitly here instead —
+    // the front-office 'module:' resource prefix does not apply to admin
+    // controllers.
+    public function createTemplate($tpl_name)
+    {
+        return $this->context->smarty->createTemplate(
+            _PS_MODULE_DIR_ . 'wineredirects/views/templates/admin/' . $tpl_name,
+            $this->context->smarty
+        );
+    }
+
     public function initContent()
     {
         parent::initContent();
@@ -43,7 +56,7 @@ class AdminWineRedirectsController extends AdminController
             'confirmed' => $confirmed,
             'review' => $review,
         ]);
-        $this->setTemplate('module:wineredirects/views/templates/admin/list.tpl');
+        $this->setTemplate('list.tpl');
     }
 
     private function fetchProducts(): array
