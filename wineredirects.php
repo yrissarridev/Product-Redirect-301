@@ -19,4 +19,35 @@ class WineRedirects extends Module
         $this->displayName = $this->l('Redirects 301 (añadas)');
         $this->description = $this->l('Sugerencias de redirect 301 para vinos descatalogados con añada más reciente activa.');
     }
+
+    public function install()
+    {
+        if (!parent::install()) {
+            return false;
+        }
+
+        $idParent = (int) Tab::getIdFromClassName('AdminParentCatalog');
+
+        $tab = new Tab();
+        $tab->class_name = 'AdminWineRedirects';
+        $tab->module = $this->name;
+        $tab->id_parent = $idParent;
+        $tab->icon = 'sync_problem';
+        foreach (Language::getLanguages(false) as $lang) {
+            $tab->name[(int) $lang['id_lang']] = 'Redirects 301 (añadas)';
+        }
+
+        return $tab->add();
+    }
+
+    public function uninstall()
+    {
+        $idTab = (int) Tab::getIdFromClassName('AdminWineRedirects');
+        if ($idTab) {
+            $tab = new Tab($idTab);
+            $tab->delete();
+        }
+
+        return parent::uninstall();
+    }
 }
