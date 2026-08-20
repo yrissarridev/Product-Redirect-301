@@ -1,5 +1,5 @@
 <?php
-class WineRedirectsVintageMatcher
+class ProductRedirectVintageMatcher
 {
     const YEAR_PATTERN = '/\b(19[5-9]\d|20[0-3]\d)\b/';
 

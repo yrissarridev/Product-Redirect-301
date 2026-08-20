@@ -1,5 +1,5 @@
 <?php
-class WineRedirectsProductUrlBuilder
+class ProductRedirectUrlBuilder
 {
     public static function buildPath(array $product): string
     {

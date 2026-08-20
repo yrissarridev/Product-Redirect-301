@@ -1,11 +1,13 @@
-# wineredirects — 301 Redirect Suggestions for Discontinued Vintages
+# productredirect — 301 Redirect Suggestions for Discontinued Product Versions
 
-A PrestaShop admin module for wine (or any vintage/season-based catalog)
-stores. It scans your catalog for products that have been disabled or run
-out of stock **and** have a newer vintage of the same product that's
-active and in stock, and suggests the `Redirect 301` rule you'd add to
-`.htaccess` to send customers straight to the current vintage instead of
-a dead product page.
+A PrestaShop admin module for any catalog where the same product gets a
+new version every year/season and the old one is discontinued — wine
+vintages, model years, seasonal collections, anything named
+`<Product Name> <Year>`. It scans your catalog for products that have
+been disabled or run out of stock **and** have a newer version of the
+same product that's active and in stock, and suggests the `Redirect 301`
+rule you'd add to `.htaccess` to send customers straight to the current
+version instead of a dead product page.
 
 It also does the reverse: if a discontinued product comes back (re-enabled,
 restocked), it flags any existing redirect for that product as **obsolete**,
@@ -21,7 +23,7 @@ into `.htaccess` yourself.
 
 ## Why
 
-`.htaccess` redirects for a rotating catalog (new vintage every year,
+`.htaccess` redirects for a rotating catalog (new version every year,
 old one discontinued) are usually maintained by hand, which means they
 drift: new discontinuations don't get a redirect until someone remembers
 to add one, and old redirects don't get removed when a product comes back
@@ -31,7 +33,8 @@ check whenever you like.
 ## Features
 
 - **Confirmados** — old product's name has an earlier year than the
-  active replacement's name (`Wine 2021` → `Wine 2023`). High confidence.
+  active replacement's name (`Trail Runner 2021` → `Trail Runner 2023`).
+  High confidence.
 - **A revisar** — the old product's name has no year in it at all (a
   non-vintage listing, an accessory, a renamed/repurposed product row).
   Shown separately, unchecked by default, for manual review.
@@ -58,15 +61,15 @@ check whenever you like.
 
 ## Install
 
-Drop the `wineredirects/` folder into your PrestaShop `modules/`
+Drop the `productredirect/` folder into your PrestaShop `modules/`
 directory, then either install it from **Módulos → Módulos** in the
 admin, or via CLI:
 
 ```bash
 php -r "
 require_once '/path/to/your/shop/config/config.inc.php';
-require_once _PS_MODULE_DIR_ . 'wineredirects/wineredirects.php';
-(new WineRedirects())->install();
+require_once _PS_MODULE_DIR_ . 'productredirect/productredirect.php';
+(new ProductRedirect())->install();
 "
 ```
 
@@ -78,7 +81,7 @@ instead of failing.
 
 ## Usage
 
-Open **Catálogo → Redirects 301 (añadas)**. Review the three sections,
+Open **Catálogo → Product Redirects 301**. Review the three sections,
 adjust the checkboxes, click **Generar documento** (or, for the
 Obsoletos section, **Generar lista para eliminar**), copy the output,
 and paste it into your `.htaccess` — additions go anywhere before the

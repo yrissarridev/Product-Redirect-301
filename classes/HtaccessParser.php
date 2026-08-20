@@ -1,5 +1,5 @@
 <?php
-class WineRedirectsHtaccessParser
+class ProductRedirectHtaccessParser
 {
     public static function extractRedirectEntries(string $htaccessContent): array
     {

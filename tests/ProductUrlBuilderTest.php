@@ -14,34 +14,35 @@ function assertEqual($actual, $expected, string $label)
     }
 }
 
-// Real fixture verified live on 2026-08-20 via curl against tienda.vinofilos.es.
+// PrestaShop's default friendly-URL format is /{category}/{id}-{link_rewrite}-{ean13}.html
+// — verified against a live PrestaShop 1.7 store's actual product URLs before writing this.
 $productWithEan = [
     'id' => 4668,
-    'link_rewrite' => '46-cepas-2023-75cl',
+    'link_rewrite' => 'trail-runner-2023',
     'ean13' => '9732925437630',
-    'cat_rewrite' => 'tintos',
+    'cat_rewrite' => 'shoes',
 ];
 assertEqual(
-    WineRedirectsProductUrlBuilder::buildPath($productWithEan),
-    '/tintos/4668-46-cepas-2023-75cl-9732925437630.html',
+    ProductRedirectUrlBuilder::buildPath($productWithEan),
+    '/shoes/4668-trail-runner-2023-9732925437630.html',
     'buildPath appends the ean13 with a leading dash'
 );
 assertEqual(
-    WineRedirectsProductUrlBuilder::build($productWithEan, 'https://tienda.vinofilos.es'),
-    'https://tienda.vinofilos.es/tintos/4668-46-cepas-2023-75cl-9732925437630.html',
+    ProductRedirectUrlBuilder::build($productWithEan, 'https://example.com'),
+    'https://example.com/shoes/4668-trail-runner-2023-9732925437630.html',
     'build prefixes the base URL'
 );
 
-// Real fixture: id 5542 "Cantagrillos - 75cl" has an empty ean13 in the DB.
+// Some products have no ean13 set in the catalog.
 $productNoEan = [
     'id' => 5542,
-    'link_rewrite' => 'cantagrillos-75cl',
+    'link_rewrite' => 'classic-backpack',
     'ean13' => '',
-    'cat_rewrite' => 'espumosos',
+    'cat_rewrite' => 'bags',
 ];
 assertEqual(
-    WineRedirectsProductUrlBuilder::buildPath($productNoEan),
-    '/espumosos/5542-cantagrillos-75cl.html',
+    ProductRedirectUrlBuilder::buildPath($productNoEan),
+    '/bags/5542-classic-backpack.html',
     'buildPath omits the trailing dash-ean segment when ean13 is empty'
 );
 

@@ -3,11 +3,11 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-class WineRedirects extends Module
+class ProductRedirect extends Module
 {
     public function __construct()
     {
-        $this->name = 'wineredirects';
+        $this->name = 'productredirect';
         $this->tab = 'administration';
         $this->version = '1.0.0';
         $this->author = 'Yrissarri';
@@ -17,8 +17,8 @@ class WineRedirects extends Module
 
         parent::__construct();
 
-        $this->displayName = $this->l('Redirects 301 (añadas)');
-        $this->description = $this->l('Sugerencias de redirect 301 para vinos descatalogados con añada más reciente activa.');
+        $this->displayName = $this->l('Product Redirects 301');
+        $this->description = $this->l('Sugerencias de redirect 301 de productos descatalogados a la versión activa más reciente del mismo producto.');
     }
 
     public function install()
@@ -38,12 +38,12 @@ class WineRedirects extends Module
         }
 
         $tab = new Tab();
-        $tab->class_name = 'AdminWineRedirects';
+        $tab->class_name = 'AdminProductRedirect';
         $tab->module = $this->name;
         $tab->id_parent = $idParent;
         $tab->icon = 'sync_problem';
         foreach (Language::getLanguages(false) as $lang) {
-            $tab->name[(int) $lang['id_lang']] = 'Redirects 301 (añadas)';
+            $tab->name[(int) $lang['id_lang']] = 'Product Redirects 301';
         }
 
         return $tab->add();
@@ -51,7 +51,7 @@ class WineRedirects extends Module
 
     public function uninstall()
     {
-        $idTab = (int) Tab::getIdFromClassName('AdminWineRedirects');
+        $idTab = (int) Tab::getIdFromClassName('AdminProductRedirect');
         if ($idTab) {
             $tab = new Tab($idTab);
             $tab->delete();

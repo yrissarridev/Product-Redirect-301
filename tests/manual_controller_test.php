@@ -3,9 +3,9 @@
 // and prints counts so you can sanity-check them (should be a small number once
 // your existing vintage swaps are already covered in .htaccess).
 require_once __DIR__ . '/../../../config/config.inc.php';
-require_once _PS_MODULE_DIR_ . 'wineredirects/classes/VintageMatcher.php';
-require_once _PS_MODULE_DIR_ . 'wineredirects/classes/HtaccessParser.php';
-require_once _PS_MODULE_DIR_ . 'wineredirects/classes/ProductUrlBuilder.php';
+require_once _PS_MODULE_DIR_ . 'productredirect/classes/VintageMatcher.php';
+require_once _PS_MODULE_DIR_ . 'productredirect/classes/HtaccessParser.php';
+require_once _PS_MODULE_DIR_ . 'productredirect/classes/ProductUrlBuilder.php';
 
 $idLang = (int) Context::getContext()->language->id;
 $idShop = (int) Context::getContext()->shop->id;
@@ -36,11 +36,11 @@ $products = array_map(function ($row) {
 
 echo 'Total products: ' . count($products) . "\n";
 
-$pairs = WineRedirectsVintageMatcher::findPairs($products);
+$pairs = ProductRedirectVintageMatcher::findPairs($products);
 echo 'Pairs found (before excluding already-redirected): ' . count($pairs) . "\n";
 
 $htaccessContent = (string) @file_get_contents(_PS_ROOT_DIR_ . '/.htaccess');
-$redirectedIds = WineRedirectsHtaccessParser::extractRedirectedProductIds($htaccessContent);
+$redirectedIds = ProductRedirectHtaccessParser::extractRedirectedProductIds($htaccessContent);
 echo 'Already-redirected ids found in .htaccess: ' . count($redirectedIds) . "\n";
 
 $confirmed = 0;
@@ -63,7 +63,7 @@ $productsById = [];
 foreach ($products as $product) {
     $productsById[$product['id']] = $product;
 }
-$redirectEntries = WineRedirectsHtaccessParser::extractRedirectEntries($htaccessContent);
+$redirectEntries = ProductRedirectHtaccessParser::extractRedirectEntries($htaccessContent);
 $obsolete = 0;
 foreach ($redirectEntries as $entry) {
     $product = $productsById[$entry['id']] ?? null;

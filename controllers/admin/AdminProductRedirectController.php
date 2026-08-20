@@ -3,11 +3,11 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-require_once _PS_MODULE_DIR_ . 'wineredirects/classes/VintageMatcher.php';
-require_once _PS_MODULE_DIR_ . 'wineredirects/classes/HtaccessParser.php';
-require_once _PS_MODULE_DIR_ . 'wineredirects/classes/ProductUrlBuilder.php';
+require_once _PS_MODULE_DIR_ . 'productredirect/classes/VintageMatcher.php';
+require_once _PS_MODULE_DIR_ . 'productredirect/classes/HtaccessParser.php';
+require_once _PS_MODULE_DIR_ . 'productredirect/classes/ProductUrlBuilder.php';
 
-class AdminWineRedirectsController extends AdminController
+class AdminProductRedirectController extends AdminController
 {
     public function __construct()
     {
@@ -23,7 +23,7 @@ class AdminWineRedirectsController extends AdminController
     public function createTemplate($tpl_name)
     {
         return $this->context->smarty->createTemplate(
-            _PS_MODULE_DIR_ . 'wineredirects/views/templates/admin/' . $tpl_name,
+            _PS_MODULE_DIR_ . 'productredirect/views/templates/admin/' . $tpl_name,
             $this->context->smarty
         );
     }
@@ -39,10 +39,10 @@ class AdminWineRedirectsController extends AdminController
         }
 
         $htaccessContent = (string) @file_get_contents(_PS_ROOT_DIR_ . '/.htaccess');
-        $redirectEntries = WineRedirectsHtaccessParser::extractRedirectEntries($htaccessContent);
+        $redirectEntries = ProductRedirectHtaccessParser::extractRedirectEntries($htaccessContent);
         $redirectedIds = array_column($redirectEntries, 'id');
 
-        $pairs = WineRedirectsVintageMatcher::findPairs($products);
+        $pairs = ProductRedirectVintageMatcher::findPairs($products);
 
         $confirmed = [];
         $review = [];
@@ -125,15 +125,15 @@ class AdminWineRedirectsController extends AdminController
             'old_name' => $pair['old']['name'],
             'old_active' => $pair['old']['active'],
             'old_qty' => $pair['old']['quantity'],
-            'old_url' => WineRedirectsProductUrlBuilder::build($pair['old'], $baseUrl),
+            'old_url' => ProductRedirectUrlBuilder::build($pair['old'], $baseUrl),
             'new_id' => $pair['new']['id'],
             'new_name' => $pair['new']['name'],
             'new_qty' => $pair['new']['quantity'],
-            'new_url' => WineRedirectsProductUrlBuilder::build($pair['new'], $baseUrl),
+            'new_url' => ProductRedirectUrlBuilder::build($pair['new'], $baseUrl),
             'redirect_line' => 'Redirect 301 '
-                . WineRedirectsProductUrlBuilder::buildPath($pair['old'])
+                . ProductRedirectUrlBuilder::buildPath($pair['old'])
                 . ' '
-                . WineRedirectsProductUrlBuilder::build($pair['new'], $baseUrl),
+                . ProductRedirectUrlBuilder::build($pair['new'], $baseUrl),
         ];
     }
 }

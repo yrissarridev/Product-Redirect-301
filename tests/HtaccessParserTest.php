@@ -19,34 +19,34 @@ $fixture = <<<'HTACCESS'
 RewriteEngine on
 RewriteRule ^api$ api/ [L]
 
-Redirect 301 /es/content/17-los-mas-vendidos https://tienda.vinofilos.es/content/17-los-mas-vendidos
-Redirect 301 /tintos/72-tarima-hill-2020-8436555720285.html https://tienda.vinofilos.es/tintos/2619-tarima-hill-2021-8436555720285.html
-Redirect 301 /rosados/2464-charlatan-2022-8437009260067.html https://tienda.vinofilos.es/rosados/5463-charlatan-2023-75cl-8437009260067.html
-Redirect 301 /tintos/tajinaste-vendimia-seleccionada-2022.html https://tienda.vinofilos.es/tintos/4785-tajinaste-vendimia-seleccionada-2023-75cl-8437010950049.html
+Redirect 301 /es/content/17-best-sellers https://example.com/content/17-best-sellers
+Redirect 301 /shoes/72-trail-runner-2020-8436555720285.html https://example.com/shoes/2619-trail-runner-2021-8436555720285.html
+Redirect 301 /bikes/2464-city-cruiser-2022-8437009260067.html https://example.com/bikes/5463-city-cruiser-2023-medium-8437009260067.html
+Redirect 301 /bikes/gravel-adventure-2022.html https://example.com/bikes/4785-gravel-adventure-2023-medium-8437010950049.html
 
 <IfModule mod_rewrite.c>
 RewriteRule ^(.+) $1.br
 </IfModule>
 HTACCESS;
 
-$ids = WineRedirectsHtaccessParser::extractRedirectedProductIds($fixture);
+$ids = ProductRedirectHtaccessParser::extractRedirectedProductIds($fixture);
 sort($ids);
 
 assertEqual($ids, [72, 2464], 'extracts only ids from lines with a numeric-id source path, skipping content redirects and slug-only paths');
-assertEqual(WineRedirectsHtaccessParser::extractRedirectedProductIds(''), [], 'returns an empty array for empty content');
+assertEqual(ProductRedirectHtaccessParser::extractRedirectedProductIds(''), [], 'returns an empty array for empty content');
 
 // extractRedirectEntries() — same matching rules, but keeps the full line and id together
 // so the caller can show/remove the exact line once the source product is back in stock.
-$entries = WineRedirectsHtaccessParser::extractRedirectEntries($fixture);
+$entries = ProductRedirectHtaccessParser::extractRedirectEntries($fixture);
 
 assertEqual(count($entries), 2, 'extractRedirectEntries finds the same 2 real product redirects as extractRedirectedProductIds');
-assertEqual($entries[0]['id'], 72, 'first entry id is 72 (Tarima Hill)');
+assertEqual($entries[0]['id'], 72, 'first entry id is 72 (Trail Runner)');
 assertEqual(
     $entries[0]['line'],
-    'Redirect 301 /tintos/72-tarima-hill-2020-8436555720285.html https://tienda.vinofilos.es/tintos/2619-tarima-hill-2021-8436555720285.html',
+    'Redirect 301 /shoes/72-trail-runner-2020-8436555720285.html https://example.com/shoes/2619-trail-runner-2021-8436555720285.html',
     'first entry keeps the full, untouched Redirect 301 line'
 );
-assertEqual($entries[1]['id'], 2464, 'second entry id is 2464 (Charlatan)');
+assertEqual($entries[1]['id'], 2464, 'second entry id is 2464 (City Cruiser)');
 
 echo $failures === 0 ? "\nALL PASS\n" : "\n$failures FAILURE(S)\n";
 exit($failures === 0 ? 0 : 1);
