@@ -1,6 +1,14 @@
 <?php
 // Functional round-trip check for WineRedirects::install()/uninstall().
 // Run from anywhere: php manual_install_test.php
+//
+// WARNING: this always ends with the module UNINSTALLED (its last check
+// calls uninstall()), and if the module is already really installed, the
+// install() call in this script fails (PrestaShop blocks double-install)
+// — but the trailing uninstall() call still runs and *does* remove the
+// real installation. Don't run this against a live-installed module
+// expecting it to be a no-op: if wineredirects is currently installed,
+// reinstall it afterwards (see the one-liner in the plan's Task 7 Step 2).
 require_once '/var/www/vhosts/vinofilos.es/tienda.vinofilos.es/config/config.inc.php';
 require_once _PS_MODULE_DIR_ . 'wineredirects/wineredirects.php';
 
