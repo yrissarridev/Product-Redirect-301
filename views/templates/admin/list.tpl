@@ -108,7 +108,7 @@
       <table class="table table-hover">
         <thead>
           <tr>
-            <th class="pr-check"></th>
+            <th class="pr-check"><input type="checkbox" class="pr-select-all" checked="checked" title="Marcar/desmarcar todos"></th>
             <th class="pr-col">Producto antiguo</th>
             <th class="pr-arrow"></th>
             <th class="pr-col">Producto actual</th>
@@ -152,7 +152,7 @@
       <table class="table table-hover">
         <thead>
           <tr>
-            <th class="pr-check"></th>
+            <th class="pr-check"><input type="checkbox" class="pr-select-all" title="Marcar/desmarcar todos"></th>
             <th class="pr-col">Producto antiguo</th>
             <th class="pr-arrow"></th>
             <th class="pr-col">Producto actual</th>
@@ -202,7 +202,7 @@
       <table class="table table-hover">
         <thead>
           <tr>
-            <th class="pr-check"></th>
+            <th class="pr-check"><input type="checkbox" class="pr-select-all" checked="checked" title="Marcar/desmarcar todos"></th>
             <th class="pr-name-col">Producto (ya disponible de nuevo)</th>
             <th class="pr-line-col">Línea a eliminar del .htaccess</th>
           </tr>
@@ -274,10 +274,29 @@ function productRedirectCopyObsoleteDocument() {
   navigator.clipboard.writeText(textarea.value);
 }
 
+function productRedirectSyncSelectAll(table) {
+  var master = table.querySelector('.pr-select-all');
+  if (!master) {
+    return;
+  }
+  var rowCheckboxes = table.querySelectorAll('tbody input[type="checkbox"]');
+  if (rowCheckboxes.length === 0) {
+    master.checked = false;
+    master.indeterminate = false;
+    return;
+  }
+  var checkedCount = table.querySelectorAll('tbody input[type="checkbox"]:checked').length;
+  master.checked = checkedCount === rowCheckboxes.length;
+  master.indeterminate = checkedCount > 0 && checkedCount < rowCheckboxes.length;
+}
+
 document.addEventListener('DOMContentLoaded', function () {
   var checkboxes = document.querySelectorAll('.productredirect-row-checkbox');
   Array.prototype.forEach.call(checkboxes, function (checkbox) {
-    checkbox.addEventListener('change', productRedirectRefreshDocument);
+    checkbox.addEventListener('change', function () {
+      productRedirectRefreshDocument();
+      productRedirectSyncSelectAll(checkbox.closest('table'));
+    });
   });
 
   var generateButton = document.getElementById('productredirect-generate');
@@ -292,7 +311,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   var obsoleteCheckboxes = document.querySelectorAll('.productredirect-obsolete-checkbox');
   Array.prototype.forEach.call(obsoleteCheckboxes, function (checkbox) {
-    checkbox.addEventListener('change', productRedirectRefreshObsoleteDocument);
+    checkbox.addEventListener('change', function () {
+      productRedirectRefreshObsoleteDocument();
+      productRedirectSyncSelectAll(checkbox.closest('table'));
+    });
   });
 
   var generateObsoleteButton = document.getElementById('productredirect-generate-obsolete');
@@ -304,5 +326,24 @@ document.addEventListener('DOMContentLoaded', function () {
   if (copyObsoleteButton) {
     copyObsoleteButton.addEventListener('click', productRedirectCopyObsoleteDocument);
   }
+
+  var selectAllBoxes = document.querySelectorAll('.pr-select-all');
+  Array.prototype.forEach.call(selectAllBoxes, function (master) {
+    var table = master.closest('table');
+    productRedirectSyncSelectAll(table);
+    master.addEventListener('change', function () {
+      var rowCheckboxes = table.querySelectorAll('tbody input[type="checkbox"]');
+      Array.prototype.forEach.call(rowCheckboxes, function (checkbox) {
+        checkbox.checked = master.checked;
+      });
+      master.indeterminate = false;
+      if (table.querySelector('.productredirect-row-checkbox')) {
+        productRedirectRefreshDocument();
+      }
+      if (table.querySelector('.productredirect-obsolete-checkbox')) {
+        productRedirectRefreshObsoleteDocument();
+      }
+    });
+  });
 });
 </script>
