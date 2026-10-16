@@ -97,6 +97,44 @@
   #pr-root .pr-btn-apply:hover {
     background: #164a1a;
   }
+  #pr-root .pr-cron-box {
+    background: #f8f8f8;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  #pr-root .pr-cron-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    align-items: center;
+  }
+  #pr-root .pr-cron-url {
+    flex: 1;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 12px;
+  }
+  #pr-root .pr-cron-crontab {
+    display: block;
+    background: #272822;
+    color: #f8f8f2;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 12px;
+    padding: 10px 12px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  #pr-root .pr-cron-status {
+    font-size: 13px;
+    color: #555;
+  }
+  #pr-root .pr-cron-status.pr-cron-error {
+    color: #a94442;
+    font-weight: bold;
+  }
 </style>
 
 <div id="pr-root" class="panel">
@@ -246,6 +284,38 @@
       <textarea id="productredirect-output-obsolete" class="form-control pr-output" rows="6" readonly placeholder="Estas líneas hay que buscarlas y borrarlas del .htaccess, no añadirlas."></textarea>
     </div>
 
+    <div class="pr-section-title">Cron automático (cada 24h)</div>
+    <div class="pr-hint">
+      Aplica solo los <strong>Confirmados</strong> (año detectado sin ambigüedad) y desactiva el producto antiguo &mdash; igual que el botón de arriba, pero sin intervención manual.
+      Los <strong>A revisar</strong> nunca se aplican automáticamente, se quedan siempre para revisarlos a mano.
+    </div>
+    <div class="pr-cron-box">
+      <div class="pr-cron-row">
+        <input type="text" id="pr-cron-url" class="form-control pr-cron-url" value="{$cron_url|escape:'html':'UTF-8'}" readonly onclick="this.select();">
+        <button type="button" id="pr-cron-copy-url" class="btn btn-default">Copiar URL</button>
+      </div>
+
+      <div class="pr-hint" style="margin-bottom:4px;">Añade esta línea al crontab del servidor (una vez al día, por ejemplo a las 4:00 de la madrugada):</div>
+      <code class="pr-cron-crontab">0 4 * * * curl -s "{$cron_url|escape:'html':'UTF-8'}" &gt;&gt; /var/log/productredirect-cron.log 2&gt;&amp;1</code>
+
+      <div class="pr-cron-status{if $cron_last_is_error} pr-cron-error{/if}">
+        {if $cron_last_run}
+          Última ejecución: {$cron_last_run|escape:'html':'UTF-8'} &mdash;
+          {if $cron_last_status == 'ok'}
+            {$cron_last_added|intval} redirect(s) añadidos, {$cron_last_deactivated|intval} producto(s) desactivado(s).
+          {else}
+            {$cron_last_status|escape:'html':'UTF-8'}
+          {/if}
+        {else}
+          Todavía no se ha ejecutado ningún cron.
+        {/if}
+      </div>
+
+      <form method="POST" action="{$currentIndex|escape:'html':'UTF-8'}&amp;token={$token|escape:'html':'UTF-8'}" style="margin-top:10px;" onsubmit="return confirm('Esto invalida la URL de cron anterior (tendrás que actualizar el crontab). ¿Continuar?');">
+        <button type="submit" name="submitRegenerarCronToken" value="1" class="btn btn-default btn-sm">Regenerar token</button>
+      </form>
+    </div>
+
   </div>
 </div>
 
@@ -354,6 +424,15 @@ document.addEventListener('DOMContentLoaded', function () {
   var copyObsoleteButton = document.getElementById('productredirect-copy-obsolete');
   if (copyObsoleteButton) {
     copyObsoleteButton.addEventListener('click', productRedirectCopyObsoleteDocument);
+  }
+
+  var cronCopyButton = document.getElementById('pr-cron-copy-url');
+  if (cronCopyButton) {
+    cronCopyButton.addEventListener('click', function () {
+      var input = document.getElementById('pr-cron-url');
+      input.select();
+      navigator.clipboard.writeText(input.value);
+    });
   }
 
   var selectAllBoxes = document.querySelectorAll('.pr-select-all');

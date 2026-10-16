@@ -57,6 +57,12 @@ class ProductRedirect extends Module
             $tab->delete();
         }
 
+        Configuration::deleteByName('PRODUCTREDIRECT_CRON_TOKEN');
+        Configuration::deleteByName('PRODUCTREDIRECT_CRON_LAST_RUN');
+        Configuration::deleteByName('PRODUCTREDIRECT_CRON_LAST_ADDED');
+        Configuration::deleteByName('PRODUCTREDIRECT_CRON_LAST_DEACTIVATED');
+        Configuration::deleteByName('PRODUCTREDIRECT_CRON_LAST_STATUS');
+
         return parent::uninstall();
     }
 }

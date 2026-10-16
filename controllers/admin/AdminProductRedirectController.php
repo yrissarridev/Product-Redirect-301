@@ -7,6 +7,7 @@ require_once _PS_MODULE_DIR_ . 'productredirect/classes/VintageMatcher.php';
 require_once _PS_MODULE_DIR_ . 'productredirect/classes/HtaccessParser.php';
 require_once _PS_MODULE_DIR_ . 'productredirect/classes/HtaccessWriter.php';
 require_once _PS_MODULE_DIR_ . 'productredirect/classes/ProductUrlBuilder.php';
+require_once _PS_MODULE_DIR_ . 'productredirect/classes/RedirectEngine.php';
 
 class AdminProductRedirectController extends AdminController
 {
@@ -22,28 +23,11 @@ class AdminProductRedirectController extends AdminController
             $this->applyToHtaccess();
         }
 
-        parent::postProcess();
-    }
-
-    // El redirect ya se encarga de mandar al cliente al producto nuevo, pero
-    // el antiguo seguía pudiendo salir activo en catálogo/buscador/sitemap
-    // mientras tanto — lo desactivamos en el mismo paso en que se aplica el
-    // redirect, para que no se quede a medias.
-    private function deactivateProducts(array $productIds): int
-    {
-        $count = 0;
-        foreach ($productIds as $idProduct) {
-            $product = new Product((int) $idProduct);
-            if (!Validate::isLoadedObject($product) || !$product->active) {
-                continue;
-            }
-            $product->active = 0;
-            if ($product->update()) {
-                $count++;
-            }
+        if (Tools::isSubmit('submitRegenerarCronToken')) {
+            $this->regenerateCronToken();
         }
 
-        return $count;
+        parent::postProcess();
     }
 
     private function applyToHtaccess()
@@ -54,7 +38,7 @@ class AdminProductRedirectController extends AdminController
         try {
             $addedIds = ProductRedirectHtaccessWriter::appendLines(_PS_ROOT_DIR_ . '/.htaccess', $lines);
             if (!empty($addedIds)) {
-                $deactivated = $this->deactivateProducts($addedIds);
+                $deactivated = ProductRedirectEngine::deactivateProducts($addedIds);
                 $this->confirmations[] = count($addedIds) . ' redirect(s) 301 añadidos al .htaccess correctamente'
                     . ($deactivated > 0 ? ' (' . $deactivated . ' producto(s) antiguo(s) desactivado(s) de paso)' : '') . '.';
             } else {
@@ -63,6 +47,14 @@ class AdminProductRedirectController extends AdminController
         } catch (Exception $e) {
             $this->errors[] = 'No se pudo escribir en el .htaccess: ' . $e->getMessage();
         }
+    }
+
+    private function regenerateCronToken()
+    {
+        $newToken = bin2hex(Tools::hash((string) mt_rand() . microtime()));
+        $newToken = substr($newToken, 0, 40);
+        Configuration::updateValue('PRODUCTREDIRECT_CRON_TOKEN', $newToken);
+        $this->confirmations[] = 'Token del cron regenerado. Actualiza la URL en tu crontab.';
     }
 
     // AdminController::createTemplate() always resolves $tpl_name relative to
@@ -82,7 +74,7 @@ class AdminProductRedirectController extends AdminController
     {
         parent::initContent();
 
-        $products = $this->fetchProducts();
+        $products = ProductRedirectEngine::fetchProducts();
         $productsById = [];
         foreach ($products as $product) {
             $productsById[$product['id']] = $product;
@@ -100,7 +92,7 @@ class AdminProductRedirectController extends AdminController
             if (in_array($pair['old']['id'], $redirectedIds, true)) {
                 continue;
             }
-            $row = $this->buildRow($pair);
+            $row = ProductRedirectEngine::buildRow($pair);
             if ($pair['needsReview']) {
                 $review[] = $row;
             } else {
@@ -125,67 +117,32 @@ class AdminProductRedirectController extends AdminController
             }
         }
 
+        $cronToken = (string) Configuration::get('PRODUCTREDIRECT_CRON_TOKEN');
+        if ($cronToken === '') {
+            $cronToken = bin2hex(Tools::hash((string) mt_rand() . microtime()));
+            $cronToken = substr($cronToken, 0, 40);
+            Configuration::updateValue('PRODUCTREDIRECT_CRON_TOKEN', $cronToken);
+        }
+        $cronUrl = Tools::getShopDomainSsl(true, false) . '/modules/productredirect/cron.php?token=' . $cronToken;
+
+        $cronLastRun = (int) Configuration::get('PRODUCTREDIRECT_CRON_LAST_RUN');
+        $cronLastStatus = (string) Configuration::get('PRODUCTREDIRECT_CRON_LAST_STATUS');
+        $cronLastAdded = (int) Configuration::get('PRODUCTREDIRECT_CRON_LAST_ADDED');
+        $cronLastDeactivated = (int) Configuration::get('PRODUCTREDIRECT_CRON_LAST_DEACTIVATED');
+
         $this->context->smarty->assign([
             'confirmed' => $confirmed,
             'review' => $review,
             'obsolete' => $obsolete,
             'currentIndex' => self::$currentIndex,
             'token' => $this->token,
+            'cron_url' => $cronUrl,
+            'cron_last_run' => $cronLastRun ? Tools::displayDate(date('Y-m-d H:i:s', $cronLastRun), null, true) : null,
+            'cron_last_status' => $cronLastStatus,
+            'cron_last_is_error' => (strpos($cronLastStatus, 'error') === 0),
+            'cron_last_added' => $cronLastAdded,
+            'cron_last_deactivated' => $cronLastDeactivated,
         ]);
         $this->setTemplate('list.tpl');
-    }
-
-    private function fetchProducts(): array
-    {
-        $idLang = (int) $this->context->language->id;
-        $idShop = (int) $this->context->shop->id;
-
-        $sql = 'SELECT p.id_product AS id, pl.name AS name, p.active AS active,
-                       IFNULL(sa.quantity, 0) AS quantity, pl.link_rewrite AS link_rewrite,
-                       p.ean13 AS ean13, cl.link_rewrite AS cat_rewrite
-                FROM ' . _DB_PREFIX_ . 'product p
-                INNER JOIN ' . _DB_PREFIX_ . 'product_lang pl
-                    ON pl.id_product = p.id_product AND pl.id_lang = ' . $idLang . ' AND pl.id_shop = ' . $idShop . '
-                LEFT JOIN ' . _DB_PREFIX_ . 'stock_available sa
-                    ON sa.id_product = p.id_product AND sa.id_product_attribute = 0 AND sa.id_shop = ' . $idShop . '
-                LEFT JOIN ' . _DB_PREFIX_ . 'category_lang cl
-                    ON cl.id_category = p.id_category_default AND cl.id_lang = ' . $idLang . ' AND cl.id_shop = ' . $idShop;
-
-        $rows = Db::getInstance()->executeS($sql);
-
-        return array_map(function ($row) {
-            return [
-                'id' => (int) $row['id'],
-                'name' => $row['name'],
-                'active' => (bool) $row['active'],
-                'quantity' => (int) $row['quantity'],
-                'link_rewrite' => $row['link_rewrite'],
-                'ean13' => $row['ean13'],
-                'cat_rewrite' => $row['cat_rewrite'],
-            ];
-        }, $rows);
-    }
-
-    private function buildRow(array $pair): array
-    {
-        // Tools::getShopDomainSsl($http=true, ...) already prepends the protocol
-        // (https:// when PS_SSL_ENABLED, per PrestaShop core) — do not prefix it again.
-        $baseUrl = Tools::getShopDomainSsl(true, false);
-
-        return [
-            'old_id' => $pair['old']['id'],
-            'old_name' => $pair['old']['name'],
-            'old_active' => $pair['old']['active'],
-            'old_qty' => $pair['old']['quantity'],
-            'old_url' => ProductRedirectUrlBuilder::build($pair['old'], $baseUrl),
-            'new_id' => $pair['new']['id'],
-            'new_name' => $pair['new']['name'],
-            'new_qty' => $pair['new']['quantity'],
-            'new_url' => ProductRedirectUrlBuilder::build($pair['new'], $baseUrl),
-            'redirect_line' => 'Redirect 301 '
-                . ProductRedirectUrlBuilder::buildPath($pair['old'])
-                . ' '
-                . ProductRedirectUrlBuilder::build($pair['new'], $baseUrl),
-        ];
     }
 }
