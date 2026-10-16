@@ -91,6 +91,12 @@
     clear: both;
     margin-top: 16px;
   }
+  #pr-root .pr-btn-apply {
+    background: #1b5e20;
+  }
+  #pr-root .pr-btn-apply:hover {
+    background: #164a1a;
+  }
 </style>
 
 <div id="pr-root" class="panel">
@@ -193,6 +199,10 @@
     <div class="pr-actions">
       <button type="button" id="productredirect-generate" class="btn btn-primary">Generar documento</button>
       <button type="button" id="productredirect-copy" class="btn btn-default">Copiar</button>
+      <form method="POST" action="{$currentIndex|escape:'html':'UTF-8'}&amp;token={$token|escape:'html':'UTF-8'}" id="pr-apply-form" style="display:inline;">
+        <input type="hidden" name="lines_text" id="pr-apply-lines-text">
+        <button type="submit" name="submitAplicarHtaccess" value="1" id="productredirect-apply" class="btn btn-primary pr-btn-apply">&#9889; Aplicar al .htaccess</button>
+      </form>
       <textarea id="productredirect-output" class="form-control pr-output" rows="10" readonly></textarea>
     </div>
 
@@ -307,6 +317,25 @@ document.addEventListener('DOMContentLoaded', function () {
   var copyButton = document.getElementById('productredirect-copy');
   if (copyButton) {
     copyButton.addEventListener('click', productRedirectCopyDocument);
+  }
+
+  var applyForm = document.getElementById('pr-apply-form');
+  if (applyForm) {
+    applyForm.addEventListener('submit', function (event) {
+      productRedirectRefreshDocument();
+      var lines = document.getElementById('productredirect-output').value;
+      document.getElementById('pr-apply-lines-text').value = lines;
+
+      var count = lines.split('\n').filter(function (l) { return l.trim() !== ''; }).length;
+      if (count === 0) {
+        event.preventDefault();
+        alert('No hay ninguna línea marcada para aplicar.');
+        return;
+      }
+      if (!window.confirm('Se van a añadir ' + count + ' redirect(s) 301 al .htaccess de la tienda real. ¿Continuar?')) {
+        event.preventDefault();
+      }
+    });
   }
 
   var obsoleteCheckboxes = document.querySelectorAll('.productredirect-obsolete-checkbox');

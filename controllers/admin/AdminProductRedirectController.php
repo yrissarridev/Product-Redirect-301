@@ -5,6 +5,7 @@ if (!defined('_PS_VERSION_')) {
 
 require_once _PS_MODULE_DIR_ . 'productredirect/classes/VintageMatcher.php';
 require_once _PS_MODULE_DIR_ . 'productredirect/classes/HtaccessParser.php';
+require_once _PS_MODULE_DIR_ . 'productredirect/classes/HtaccessWriter.php';
 require_once _PS_MODULE_DIR_ . 'productredirect/classes/ProductUrlBuilder.php';
 
 class AdminProductRedirectController extends AdminController
@@ -13,6 +14,32 @@ class AdminProductRedirectController extends AdminController
     {
         $this->bootstrap = true;
         parent::__construct();
+    }
+
+    public function postProcess()
+    {
+        if (Tools::isSubmit('submitAplicarHtaccess')) {
+            $this->applyToHtaccess();
+        }
+
+        parent::postProcess();
+    }
+
+    private function applyToHtaccess()
+    {
+        $linesText = Tools::getValue('lines_text', '');
+        $lines = preg_split('/\r\n|\r|\n/', (string) $linesText);
+
+        try {
+            $added = ProductRedirectHtaccessWriter::appendLines(_PS_ROOT_DIR_ . '/.htaccess', $lines);
+            if ($added > 0) {
+                $this->confirmations[] = $added . ' redirect(s) 301 añadidos al .htaccess correctamente.';
+            } else {
+                $this->errors[] = 'No había ninguna línea nueva que añadir (o no estaban marcadas).';
+            }
+        } catch (Exception $e) {
+            $this->errors[] = 'No se pudo escribir en el .htaccess: ' . $e->getMessage();
+        }
     }
 
     // AdminController::createTemplate() always resolves $tpl_name relative to
@@ -79,6 +106,8 @@ class AdminProductRedirectController extends AdminController
             'confirmed' => $confirmed,
             'review' => $review,
             'obsolete' => $obsolete,
+            'currentIndex' => self::$currentIndex,
+            'token' => $this->token,
         ]);
         $this->setTemplate('list.tpl');
     }
