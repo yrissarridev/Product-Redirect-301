@@ -10,9 +10,10 @@ class ProductRedirectHtaccessWriter
      * producto, y cualquiera cuyo id de producto ya esté presente en el
      * fichero — nunca duplica ni escribe texto arbitrario.
      *
-     * @return int número de líneas realmente añadidas
+     * @return int[] ids de producto cuya línea se añadió realmente (el "antiguo"
+     *               de cada redirect, el que hay que desactivar en PrestaShop)
      */
-    public static function appendLines(string $htaccessPath, array $lines): int
+    public static function appendLines(string $htaccessPath, array $lines): array
     {
         $content = (string) @file_get_contents($htaccessPath);
         if ($content === '') {
@@ -22,6 +23,7 @@ class ProductRedirectHtaccessWriter
         $existingIds = ProductRedirectHtaccessParser::extractRedirectedProductIds($content);
 
         $toAdd = [];
+        $addedIds = [];
         foreach ($lines as $line) {
             $line = trim($line);
             if ($line === '') {
@@ -35,11 +37,12 @@ class ProductRedirectHtaccessWriter
                 continue;
             }
             $toAdd[] = $line;
+            $addedIds[] = $id;
             $existingIds[] = $id;
         }
 
         if (empty($toAdd)) {
-            return 0;
+            return [];
         }
 
         $block = self::MARKER . "\n" . implode("\n", $toAdd);
@@ -61,6 +64,6 @@ class ProductRedirectHtaccessWriter
             throw new Exception('No se pudo escribir en el .htaccess (revisa permisos).');
         }
 
-        return count($toAdd);
+        return $addedIds;
     }
 }

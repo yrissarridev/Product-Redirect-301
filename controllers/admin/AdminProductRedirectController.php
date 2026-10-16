@@ -25,15 +25,38 @@ class AdminProductRedirectController extends AdminController
         parent::postProcess();
     }
 
+    // El redirect ya se encarga de mandar al cliente al producto nuevo, pero
+    // el antiguo seguía pudiendo salir activo en catálogo/buscador/sitemap
+    // mientras tanto — lo desactivamos en el mismo paso en que se aplica el
+    // redirect, para que no se quede a medias.
+    private function deactivateProducts(array $productIds): int
+    {
+        $count = 0;
+        foreach ($productIds as $idProduct) {
+            $product = new Product((int) $idProduct);
+            if (!Validate::isLoadedObject($product) || !$product->active) {
+                continue;
+            }
+            $product->active = 0;
+            if ($product->update()) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
     private function applyToHtaccess()
     {
         $linesText = Tools::getValue('lines_text', '');
         $lines = preg_split('/\r\n|\r|\n/', (string) $linesText);
 
         try {
-            $added = ProductRedirectHtaccessWriter::appendLines(_PS_ROOT_DIR_ . '/.htaccess', $lines);
-            if ($added > 0) {
-                $this->confirmations[] = $added . ' redirect(s) 301 añadidos al .htaccess correctamente.';
+            $addedIds = ProductRedirectHtaccessWriter::appendLines(_PS_ROOT_DIR_ . '/.htaccess', $lines);
+            if (!empty($addedIds)) {
+                $deactivated = $this->deactivateProducts($addedIds);
+                $this->confirmations[] = count($addedIds) . ' redirect(s) 301 añadidos al .htaccess correctamente'
+                    . ($deactivated > 0 ? ' (' . $deactivated . ' producto(s) antiguo(s) desactivado(s) de paso)' : '') . '.';
             } else {
                 $this->errors[] = 'No había ninguna línea nueva que añadir (o no estaban marcadas).';
             }
