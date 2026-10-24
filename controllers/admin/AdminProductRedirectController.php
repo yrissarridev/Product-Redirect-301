@@ -75,10 +75,6 @@ class AdminProductRedirectController extends AdminController
         parent::initContent();
 
         $products = ProductRedirectEngine::fetchProducts();
-        $productsById = [];
-        foreach ($products as $product) {
-            $productsById[$product['id']] = $product;
-        }
 
         $htaccessContent = (string) @file_get_contents(_PS_ROOT_DIR_ . '/.htaccess');
         $redirectEntries = ProductRedirectHtaccessParser::extractRedirectEntries($htaccessContent);
@@ -103,19 +99,9 @@ class AdminProductRedirectController extends AdminController
         // A redirect goes stale the moment its source product comes back —
         // active again, with stock — since the .htaccess rule is static and
         // has no way to know that on its own; it would keep bouncing real
-        // customers away from a product that's sellable again.
-        $obsolete = [];
-        foreach ($redirectEntries as $entry) {
-            $product = $productsById[$entry['id']] ?? null;
-            if ($product !== null && $product['active'] && $product['quantity'] > 0) {
-                $obsolete[] = [
-                    'id' => $product['id'],
-                    'name' => $product['name'],
-                    'qty' => $product['quantity'],
-                    'line' => $entry['line'],
-                ];
-            }
-        }
+        // customers away from a product that's sellable again. The daily cron
+        // removes these too (same rule, ProductRedirectEngine).
+        $obsolete = ProductRedirectEngine::findObsoleteEntries($products, $redirectEntries);
 
         $cronToken = (string) Configuration::get('PRODUCTREDIRECT_CRON_TOKEN');
         if ($cronToken === '') {
@@ -129,6 +115,7 @@ class AdminProductRedirectController extends AdminController
         $cronLastStatus = (string) Configuration::get('PRODUCTREDIRECT_CRON_LAST_STATUS');
         $cronLastAdded = (int) Configuration::get('PRODUCTREDIRECT_CRON_LAST_ADDED');
         $cronLastDeactivated = (int) Configuration::get('PRODUCTREDIRECT_CRON_LAST_DEACTIVATED');
+        $cronLastRemoved = (int) Configuration::get('PRODUCTREDIRECT_CRON_LAST_REMOVED');
 
         $this->context->smarty->assign([
             'confirmed' => $confirmed,
@@ -142,6 +129,7 @@ class AdminProductRedirectController extends AdminController
             'cron_last_is_error' => (strpos($cronLastStatus, 'error') === 0),
             'cron_last_added' => $cronLastAdded,
             'cron_last_deactivated' => $cronLastDeactivated,
+            'cron_last_removed' => $cronLastRemoved,
         ]);
         $this->setTemplate('list.tpl');
     }

@@ -55,7 +55,62 @@ class ProductRedirectHtaccessWriter
             $newContent = $block . "\n\n" . $content;
         }
 
+        self::write($htaccessPath, $newContent);
+
+        return $addedIds;
+    }
+
+    /**
+     * Quita del .htaccess las líneas dadas (los redirects "Obsoletos": su
+     * producto de origen vuelve a estar activo y con stock). Solo borra líneas
+     * enteras idénticas con el formato exacto de redirect de producto; nunca
+     * toca otro texto aunque se lo pasen.
+     *
+     * @return int[] ids de producto cuya línea se quitó realmente
+     */
+    public static function removeLines(string $htaccessPath, array $lines): array
+    {
+        $content = (string) @file_get_contents($htaccessPath);
+        if ($content === '') {
+            throw new Exception('No se pudo leer el .htaccess (' . $htaccessPath . ')');
+        }
+
+        $toRemove = [];
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (preg_match('/^Redirect 301 \/[^\/\s]+\/(\d+)-\S+ https?:\/\/\S+$/', $line, $m)) {
+                $toRemove[$line] = (int) $m[1];
+            }
+        }
+
+        $kept = [];
+        $removedIds = [];
+        foreach (preg_split('/(?<=\n)/', $content) as $fileLine) {
+            $key = trim($fileLine);
+            if (isset($toRemove[$key])) {
+                $removedIds[] = $toRemove[$key];
+                continue;
+            }
+            $kept[] = $fileLine;
+        }
+
+        if (empty($removedIds)) {
+            return [];
+        }
+
+        self::write($htaccessPath, implode('', $kept));
+
+        return array_values(array_unique($removedIds));
+    }
+
+    private static function write(string $htaccessPath, string $newContent)
+    {
+        // El cron puede quitar y añadir en el mismo segundo: sin el sufijo, la
+        // segunda copia pisaría a la primera (la del fichero original).
         $backupPath = $htaccessPath . '.bak-productredirect-' . date('Ymd-His');
+        for ($n = 2; file_exists($backupPath); $n++) {
+            $backupPath = $htaccessPath . '.bak-productredirect-' . date('Ymd-His') . '-' . $n;
+        }
         if (!@copy($htaccessPath, $backupPath)) {
             throw new Exception('No se pudo hacer copia de seguridad antes de escribir, abortado por seguridad.');
         }
@@ -63,7 +118,5 @@ class ProductRedirectHtaccessWriter
         if (@file_put_contents($htaccessPath, $newContent) === false) {
             throw new Exception('No se pudo escribir en el .htaccess (revisa permisos).');
         }
-
-        return $addedIds;
     }
 }

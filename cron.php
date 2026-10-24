@@ -2,7 +2,8 @@
 /**
  * Cron automático del módulo Product Redirects 301.
  *
- * Aplica al .htaccess real SOLO los pares "Confirmados" (año nuevo > año
+ * Quita del .htaccess los redirects "Obsoletos" (su producto de origen
+ * vuelve a estar activo y con stock) y aplica SOLO los pares "Confirmados" (año nuevo > año
  * viejo detectado en el nombre, sin ambigüedad) que aún no estén
  * redirigidos, y desactiva el producto antiguo correspondiente — exactamente
  * la misma lógica que el botón manual "Aplicar al .htaccess", pero nunca
@@ -51,9 +52,10 @@ try {
     Configuration::updateValue('PRODUCTREDIRECT_CRON_LAST_RUN', time());
     Configuration::updateValue('PRODUCTREDIRECT_CRON_LAST_ADDED', (int) $result['added']);
     Configuration::updateValue('PRODUCTREDIRECT_CRON_LAST_DEACTIVATED', (int) $result['deactivated']);
+    Configuration::updateValue('PRODUCTREDIRECT_CRON_LAST_REMOVED', (int) $result['removed']);
     Configuration::updateValue('PRODUCTREDIRECT_CRON_LAST_STATUS', 'ok');
 
-    echo "OK. Redirects anadidos: {$result['added']}. Productos desactivados: {$result['deactivated']}.\n";
+    echo "OK. Redirects anadidos: {$result['added']}. Productos desactivados: {$result['deactivated']}. Obsoletos eliminados: {$result['removed']}.\n";
 } catch (\Throwable $e) {
     Configuration::updateValue('PRODUCTREDIRECT_CRON_LAST_RUN', time());
     Configuration::updateValue('PRODUCTREDIRECT_CRON_LAST_STATUS', 'error: ' . $e->getMessage());

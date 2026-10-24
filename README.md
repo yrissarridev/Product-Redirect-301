@@ -40,7 +40,7 @@ check whenever you like.
   Shown separately, unchecked by default, for manual review.
 - **Obsoletos** — an existing `Redirect 301` in `.htaccess` whose source
   product is active and in stock again. Shown with the exact line to
-  remove.
+  remove; the daily cron (`cron.php`) removes these lines automatically.
 - Already-covered products (already present as a `Redirect 301` source in
   your live `.htaccess`) are automatically excluded from all three lists.
 - Per-row checkboxes + a "Generar documento" button that builds the
@@ -96,6 +96,7 @@ with a tiny inline assertion helper, runnable directly:
 ```bash
 php tests/VintageMatcherTest.php
 php tests/HtaccessParserTest.php
+php tests/HtaccessWriterTest.php
 php tests/ProductUrlBuilderTest.php
 ```
 

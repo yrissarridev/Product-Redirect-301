@@ -287,6 +287,7 @@
     <div class="pr-section-title">Cron automático (cada 24h)</div>
     <div class="pr-hint">
       Aplica solo los <strong>Confirmados</strong> (año detectado sin ambigüedad) y desactiva el producto antiguo &mdash; igual que el botón de arriba, pero sin intervención manual.
+      También quita del .htaccess los <strong>Obsoletos</strong> (el producto de origen vuelve a estar activo y con stock).
       Los <strong>A revisar</strong> nunca se aplican automáticamente, se quedan siempre para revisarlos a mano.
     </div>
     <div class="pr-cron-box">
@@ -302,7 +303,7 @@
         {if $cron_last_run}
           Última ejecución: {$cron_last_run|escape:'html':'UTF-8'} &mdash;
           {if $cron_last_status == 'ok'}
-            {$cron_last_added|intval} redirect(s) añadidos, {$cron_last_deactivated|intval} producto(s) desactivado(s).
+            {$cron_last_added|intval} redirect(s) añadidos, {$cron_last_deactivated|intval} producto(s) desactivado(s), {$cron_last_removed|intval} obsoleto(s) eliminado(s).
           {else}
             {$cron_last_status|escape:'html':'UTF-8'}
           {/if}

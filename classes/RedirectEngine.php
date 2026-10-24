@@ -151,24 +151,60 @@ class ProductRedirectEngine
     }
 
     /**
-     * Ejecuta el ciclo completo automático: busca los pares confirmados
-     * pendientes, los escribe en el .htaccess real y desactiva los productos
-     * antiguos correspondientes. Pensado para ser llamado tanto desde el
-     * cron (cron.php) como, si hiciera falta, desde el propio admin.
+     * Ejecuta el ciclo completo automático: quita del .htaccess los redirects
+     * obsoletos, busca los pares confirmados pendientes, los escribe en el
+     * .htaccess real y desactiva los productos antiguos correspondientes.
+     * Pensado para ser llamado tanto desde el cron (cron.php) como, si hiciera
+     * falta, desde el propio admin.
      *
-     * @return array{added: int, deactivated: int}
+     * @return array{added: int, deactivated: int, removed: int}
      */
     public static function applyAutomatic(): array
     {
+        $htaccessPath = _PS_ROOT_DIR_ . '/.htaccess';
+
+        // Primero los obsoletos: un redirect cuyo producto de origen vuelve a
+        // estar activo y con stock manda a los clientes a otro producto en vez
+        // de dejarles comprar este. VintageMatcher solo toma como "viejo" un
+        // producto inactivo o sin stock, así que lo quitado aquí no se vuelve
+        // a añadir abajo (salvo que se agote otra vez).
+        $obsolete = self::findObsoleteEntries(
+            self::fetchProducts(),
+            ProductRedirectHtaccessParser::extractRedirectEntries((string) @file_get_contents($htaccessPath))
+        );
+        $removedIds = empty($obsolete) ? [] : ProductRedirectHtaccessWriter::removeLines($htaccessPath, array_column($obsolete, 'line'));
+
         $lines = self::findConfirmedLines();
-
-        if (empty($lines)) {
-            return ['added' => 0, 'deactivated' => 0];
-        }
-
-        $addedIds = ProductRedirectHtaccessWriter::appendLines(_PS_ROOT_DIR_ . '/.htaccess', $lines);
+        $addedIds = empty($lines) ? [] : ProductRedirectHtaccessWriter::appendLines($htaccessPath, $lines);
         $deactivated = self::deactivateProductsSql($addedIds);
 
-        return ['added' => count($addedIds), 'deactivated' => $deactivated];
+        return ['added' => count($addedIds), 'deactivated' => $deactivated, 'removed' => count($removedIds)];
+    }
+
+    /**
+     * Redirects "Obsoletos": su producto de origen vuelve a estar activo y con
+     * stock. Lo usan la pantalla del módulo y el cron, con la misma regla.
+     */
+    public static function findObsoleteEntries(array $products, array $redirectEntries): array
+    {
+        $productsById = [];
+        foreach ($products as $product) {
+            $productsById[$product['id']] = $product;
+        }
+
+        $obsolete = [];
+        foreach ($redirectEntries as $entry) {
+            $product = $productsById[$entry['id']] ?? null;
+            if ($product !== null && $product['active'] && $product['quantity'] > 0) {
+                $obsolete[] = [
+                    'id' => $product['id'],
+                    'name' => $product['name'],
+                    'qty' => $product['quantity'],
+                    'line' => $entry['line'],
+                ];
+            }
+        }
+
+        return $obsolete;
     }
 }
